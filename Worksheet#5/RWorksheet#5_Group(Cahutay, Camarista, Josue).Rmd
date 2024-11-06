@@ -1,0 +1,61 @@
+---
+title: "RWorksheet#5_Group(Cahutay, Camarista, Josue)"
+author: "Cahutay, Camarista, Josue"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(polite)
+library(httr)
+library(rvest)
+library(dplyr)
+url <- "https://www.imdb.com/chart/toptv/?sort=rank%2Casc"
+
+session <- bow(url, 
+               user_agent = "Educational")
+session
+```
+
+```{r}
+title_list <- scrape(session) %>%
+  html_nodes('h3.ipc-title__text') %>% 
+  html_text
+
+title_list
+```
+
+
+```{r}
+title_list_sub <- as.data.frame(title_list[2:26])
+
+head(title_list_sub)
+```
+
+```{r}
+colnames(title_list_sub) <- "ranks"
+
+#split the string(rank and title)
+split_df <- strsplit(as.character(title_list_sub$ranks),"\\.",fixed = TRUE)
+split_df <- data.frame(do.call(rbind,split_df))
+
+split_df
+```
+
+```{r}
+rate_ls <- scrape(session) %>%
+  html_nodes('span.ipc-rating-star--rating') %>%
+  html_text
+
+df <- data.frame (
+  Title = split_df,
+  rate = rate_ls
+)
+
+df
+```
+
