@@ -22,40 +22,24 @@ session
 ```
 
 ```{r}
-title_list <- scrape(session) %>%
-  html_nodes('h3.ipc-title__text') %>% 
-  html_text
-
-title_list
-```
+title_list <- read_html(url) %>%
+  html_nodes('h3.ipc-title__text') %>%
+  html_text()
 
 
-```{r}
-title_list_sub <- as.data.frame(title_list[2:26])
 
-head(title_list_sub)
-```
-
-```{r}
+title_list_sub <- as.data.frame(title_list[2:26], stringsAsFactors = FALSE)
 colnames(title_list_sub) <- "ranks"
 
-#split the string(rank and title)
-split_df <- strsplit(as.character(title_list_sub$ranks),"\\.",fixed = TRUE)
-split_df <- data.frame(do.call(rbind,split_df))
+split_df <- strsplit(as.character(title_list_sub$ranks), "\\.", fixed = FALSE)
+split_df <- data.frame(do.call(rbind, split_df), stringsAsFactors = FALSE)
 
-split_df
+colnames(split_df) <- c("rank", "title")
+split_df <- split_df %>% select(rank, title)
+
+split_df$title <- trimws(split_df$title)
+
+
+rank_title <- split_df
+rank_title
 ```
-
-```{r}
-rate_ls <- scrape(session) %>%
-  html_nodes('span.ipc-rating-star--rating') %>%
-  html_text
-
-df <- data.frame (
-  Title = split_df,
-  rate = rate_ls
-)
-
-df
-```
-
