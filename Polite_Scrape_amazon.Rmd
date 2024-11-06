@@ -1,0 +1,93 @@
+---
+title: "Lyxton"
+author: "John Lyxton Camarista"
+date: "2024-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load necessary libraries
+library(rvest)
+library(httr)
+library(dplyr)
+library(polite)
+library(stringr)
+
+# Define URLs
+urls <- c('https://www.amazon.com/s?k=backpacks&crid=35ZQ1H72MC3G9&sprefix=backpacks%2Caps%2C590&ref=nb_sb_ss_ts-doa-p_3_9', 
+          'https://www.amazon.com/s?k=laptops&crid=L7MQBW7MD4SX&sprefix=laptopb%2Caps%2C1304&ref=nb_sb_noss_2',
+          'https://www.amazon.com/s?k=phone+case&dc&crid=1VPDCJ87S93TL&sprefix=phone+cas%2Caps%2C451&ref=a9_asc_1',
+          'https://www.amazon.com/s?k=mountain+bike&crid=1ZQR71S8XHZN6&sprefix=mountain+bik%2Caps%2C499&ref=nb_sb_noss_2',
+          'https://www.amazon.com/s?k=tshirt&crid=2RQIP7MP6IYAW&sprefix=tshirt%2Caps%2C443&ref=nb_sb_noss_2')
+
+```
+
+
+```{r}
+
+
+df <- list()
+
+for (i in seq_along(urls)) {
+  
+    session <- bow(urls[i], user_agent = "Educational")
+  
+  product_name <- scrape(session) %>%
+    html_nodes('h2.a-size-mini') %>% 
+    html_text() %>%
+    head(30) 
+
+  
+  product_description <- scrape(session) %>%
+    html_nodes('div.productDescription') %>% 
+    html_text() %>%
+    head(30) 
+  
+
+  product_rating <- scrape(session) %>%
+    html_nodes('span.a-icon-alt') %>% 
+    html_text() %>%
+    head(30)  
+  ratings <- as.numeric(str_extract(product_rating, "\\d+\\.\\d"))
+  
+  
+  product_price <- scrape(session) %>%
+    html_nodes('span.a-price') %>% 
+    html_text() %>%
+    head(30) 
+  price <- as.numeric(str_extract(product_price, "\\d+\\.\\d+"))
+  
+  
+  product_review <- scrape(session) %>%
+    html_nodes('div.review-text-content') %>% 
+    html_text() %>%
+    head(30)  
+  
+  
+  dfTemp <- data.frame(Product_Name = product_name[1:30],
+                       Description = product_description[1:30],
+                       Rating = ratings[1:30],
+                       Price = price[1:30],
+                       stringsAsFactors = FALSE)
+  
+  df[[i]] <- dfTemp
+}
+
+```
+
+```{r}
+print(df[[1]])
+print(df[[2]])
+print(df[[3]])
+print(df[[4]])
+print(df[[5]])
+
+```
+
+
+
+
