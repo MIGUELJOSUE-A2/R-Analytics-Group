@@ -92,17 +92,30 @@ links <- main_page %>%
   html_nodes("a.ipc-title-link-wrapper") %>%
   html_attr("href")
 
+# Loop to get link of each show's page
 show_data <- lapply(links, function(link) {
-  full_link <- paste0("https://imdb.com", link) 
-  show_page <- read_html(full_link)
+  complete_link <- paste0("https://imdb.com", link)
+
+  #loop to get the link for user review page
+  usrv_link <- read_html(complete_link)
+  usrv_link_page <- usrv_link %>%
+    html_nodes('a.isReview') %>%
+    html_attr("href")
   
-  return(data.frame(show_link = link))
+  #loop to get user reviews of each shows
+  usrv <- read_html(paste0("https://imdb.com", usrv_link_page[1]))
+  usrv_count <- usrv %>%
+    html_nodes('[data-testid="tturv-total-reviews"]') %>%
+    html_text()
+
+  return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count)) 
 })
 
-show_url_df <- do.call(rbind, all_show_data)
-print(data_frame)
+show_url_df <- do.call(rbind, show_data)
+print(show_url_df)
 
-
+shows <- cbind(top_tv_shows, show_url_df)
+shows
 ```
 
 
