@@ -55,32 +55,54 @@ rating_ls <- read_html(url) %>%
 voter_ls <- read_html(url) %>%
   html_nodes('.ipc-rating-star--voteCount') %>%
   html_text()
+clean_votes <- gsub('[()]', '', voter_ls)
 
 #extracted the number of episodes
 eps_ls <- read_html(url) %>%
-  html_nodes('.cli-title-metadata-item') %>%
+  html_nodes('span.sc-5bc66c50-6.OOdsw.cli-title-metadata-item:nth-of-type(2)') %>%
   html_text()
-eps_extracted <- eps_ls[grep("eps", eps_ls)]
-eps_numbers <- sapply(eps_extracted, function(x) strsplit(x, " ")[[1]][1])
-eps_numbers <- as.numeric(eps_numbers)
+clean_eps <- gsub('[eps]', '', eps_ls)
+num_eps <- as.numeric(clean)
+#note to self, use gsub() to remove constant strings appearing in the dataset.
 
 #extracted the year released 
-span_data <- read_html(url) %>%
-  html_nodes('.cli-title-metadata-item') %>%
+years <- read_html(url) %>%
+  html_nodes('span.sc-5bc66c50-6.OOdsw.cli-title-metadata-item:nth-of-type(1)') %>%
   html_text()
-years <- span_data[seq(1, length(span_data), by = 3)]
 ```
 
 ```{r}
 top_tv_shows <- data.frame(
-  Ranks = rank_title[,1],
+  Rank = rank_title[,1],
   Title = rank_title[,2],
   Rating = rating_ls,
-  VotersCount = voter_ls,
-  Episodes = eps_numbers,
-  ReleaseDate = years
+  Voters = clean_votes,
+  Episodes = num_eps,
+  Year = years
 )
 top_tv_shows
+```
+
+Number of user reviews
+```{r}
+home_link <- 'https://www.imdb.com/chart/toptv/'
+main_page <- read_html(home_link)
+
+links <- main_page %>%
+  html_nodes("a.ipc-title-link-wrapper") %>%
+  html_attr("href")
+
+show_data <- lapply(links, function(link) {
+  full_link <- paste0("https://imdb.com", link) 
+  show_page <- read_html(full_link)
+  
+  return(data.frame(show_link = link))
+})
+
+show_url_df <- do.call(rbind, all_show_data)
+print(data_frame)
+
+
 ```
 
 
