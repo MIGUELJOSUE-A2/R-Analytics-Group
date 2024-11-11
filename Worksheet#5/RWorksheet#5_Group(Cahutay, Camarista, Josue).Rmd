@@ -103,11 +103,16 @@ show_data <- lapply(links, function(link) {
     html_nodes('a.isReview') %>%
     html_attr("href")
   
-  #test
-  crit <- usrv_link %>%
+  #loop to extract critic reviews
+  critic <- usrv_link %>%
               html_nodes("span.score") %>%
               html_text()
-  crit_df <- data.frame(Critic_Reviews = crit[2], stringsAsFactors = FALSE)
+  critic_df <- data.frame(Critic_Reviews = critic[2], stringsAsFactors = FALSE)
+  
+  #loop to extract pop rating
+  pop_rating <- usrv_link %>%
+              html_nodes('[data-testid="hero-rating-bar__popularity__score"]') %>%
+              html_text()
   
   #loop to get user reviews of each shows
   usrv <- read_html(paste0("https://imdb.com", usrv_link_page[1]))
@@ -115,7 +120,7 @@ show_data <- lapply(links, function(link) {
     html_nodes('[data-testid="tturv-total-reviews"]') %>%
     html_text()
 
-  return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count, Critic = crit_df)) 
+  return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count, Critic = critic_df, Popularity_Rating = pop_rating)) 
 })
 
 
