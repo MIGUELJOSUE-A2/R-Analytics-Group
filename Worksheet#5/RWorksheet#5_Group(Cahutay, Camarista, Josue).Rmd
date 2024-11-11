@@ -27,6 +27,7 @@ session
 title_list <- read_html(url) %>%
   html_nodes('.ipc-title__text') %>%
   html_text()
+title_list
 ```
 
 ```{r}
@@ -102,14 +103,22 @@ show_data <- lapply(links, function(link) {
     html_nodes('a.isReview') %>%
     html_attr("href")
   
+  #test
+  crit <- usrv_link %>%
+              html_nodes("span.score") %>%
+              html_text()
+  crit_df <- data.frame(Critic_Reviews = crit[2], stringsAsFactors = FALSE)
+  
   #loop to get user reviews of each shows
   usrv <- read_html(paste0("https://imdb.com", usrv_link_page[1]))
   usrv_count <- usrv %>%
     html_nodes('[data-testid="tturv-total-reviews"]') %>%
     html_text()
 
-  return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count)) 
+  return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count, Critic = crit_df)) 
 })
+
+
 
 show_url_df <- do.call(rbind, show_data)
 print(show_url_df)
@@ -117,7 +126,6 @@ print(show_url_df)
 shows <- cbind(top_tv_shows, show_url_df)
 shows
 ```
-
 
  - Below is the Amazon Data authored by Camarista
 ```{r}
