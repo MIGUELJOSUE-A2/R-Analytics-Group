@@ -96,7 +96,7 @@ links <- main_page %>%
 # Loop to get link of each show's page
 show_data <- lapply(links, function(link) {
   complete_link <- paste0("https://imdb.com", link)
-
+  
   #loop to get the link for user review page
   usrv_link <- read_html(complete_link)
   usrv_link_page <- usrv_link %>%
@@ -113,19 +113,22 @@ show_data <- lapply(links, function(link) {
   pop_rating <- usrv_link %>%
               html_nodes('[data-testid="hero-rating-bar__popularity__score"]') %>%
               html_text()
+  pop_rating_df <- data.frame(Popularity_Rating = pop_rating[2], stringsAsFactors = FALSE)
   
   #loop to get user reviews of each shows
   usrv <- read_html(paste0("https://imdb.com", usrv_link_page[1]))
   usrv_count <- usrv %>%
     html_nodes('[data-testid="tturv-total-reviews"]') %>%
     html_text()
-
-  return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count, Critic = critic_df, Popularity_Rating = pop_rating)) 
+  
+  return(data.frame(User_Reviews = usrv_count, Critic = critic_df, pop = pop_rating_df)) 
 })
 
+show_url_df <- do.call(rbind, show_data)
 shows <- cbind(top_tv_shows, show_url_df)
 shows
 ```
+
 
 
 2. 5 tv shows to scrape 20 user reviews.
