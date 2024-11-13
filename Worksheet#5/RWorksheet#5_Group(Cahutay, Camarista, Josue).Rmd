@@ -63,7 +63,7 @@ eps_ls <- read_html(url) %>%
   html_nodes('span.sc-5bc66c50-6.OOdsw.cli-title-metadata-item:nth-of-type(2)') %>%
   html_text()
 clean_eps <- gsub('[eps]', '', eps_ls)
-num_eps <- as.numeric(clean)
+num_eps <- as.numeric(clean_eps)
 #note to self, use gsub() to remove constant strings appearing in the dataset.
 
 #extracted the year released 
@@ -123,14 +123,37 @@ show_data <- lapply(links, function(link) {
   return(data.frame(Show_Link = complete_link, User_Reviews = usrv_count, Critic = critic_df, Popularity_Rating = pop_rating)) 
 })
 
-
-
-show_url_df <- do.call(rbind, show_data)
-print(show_url_df)
-
 shows <- cbind(top_tv_shows, show_url_df)
 shows
 ```
+
+
+2. 5 tv shows to scrape 20 user reviews.
+```{r}
+
+```
+
+
+3. Time series for tv shows released by year and the most number of tv
+shows released.
+```{r}
+library(ggplot2)
+years <- substr(years, 1,4)
+years <- as.numeric(years)      
+
+ggplot(data.frame(Year = years), aes(x = Year)) +
+  geom_line(stat = "count", fill = "skyblue", color = "blue") +
+  labs(title = "Number of TV Shows Released by Year",
+       x = "Year",
+       y = "Number of TV Shows") +
+  theme_minimal()
+
+most_shows_year <- as.data.frame(table(years))
+most_shows_year <- most_shows_year[which.max(most_shows_year$Freq), ]
+print(most_shows_year)
+
+```
+
 
  - Below is the Amazon Data authored by Camarista
 ```{r}
