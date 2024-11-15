@@ -103,6 +103,12 @@ show_data <- lapply(links, function(link) {
     html_nodes('a.isReview') %>%
     html_attr("href")
   
+  #loop to get user reviews of each shows
+  usrv <- read_html(paste0("https://imdb.com", usrv_link_page[1]))
+  usrv_count <- usrv %>%
+    html_nodes('[data-testid="tturv-total-reviews"]') %>%
+    html_text()
+  
   #loop to extract critic reviews
   critic <- usrv_link %>%
               html_nodes("span.score") %>%
@@ -114,12 +120,6 @@ show_data <- lapply(links, function(link) {
               html_nodes('[data-testid="hero-rating-bar__popularity__score"]') %>%
               html_text()
   pop_rating_df <- data.frame(Popularity_Rating = pop_rating[2], stringsAsFactors = FALSE)
-  
-  #loop to get user reviews of each shows
-  usrv <- read_html(paste0("https://imdb.com", usrv_link_page[1]))
-  usrv_count <- usrv %>%
-    html_nodes('[data-testid="tturv-total-reviews"]') %>%
-    html_text()
   
   return(data.frame(User_Reviews = usrv_count, Critic = critic_df, pop = pop_rating_df)) 
 })
@@ -133,9 +133,77 @@ shows
 
 2. 5 tv shows to scrape 20 user reviews.
 ```{r}
+#links of the 5 shows I want to scrape
+#breaking bad, planet earth 2, band of brothers, chernobyl, game of thrones 
+library(rvest)
+library(dplyr)
+
+url_of_5Shows <- c(
+  "https://www.imdb.com/title/tt0903747/reviews/?ref_=ttexr_ql_2",
+  "https://www.imdb.com/title/tt5491994/reviews/?ref_=tt_ov_ql_2",
+  "https://www.imdb.com/title/tt0185906/reviews/?ref_=tt_ov_ql_2",
+  "https://www.imdb.com/title/tt7366338/reviews/?ref_=tt_ov_ql_2",
+  "https://www.imdb.com/title/tt0944947/reviews/?ref_=tt_ov_ql_2"
+)
+
+five_shows_url_df <- data.frame(
+  Title = c(
+    "Breaking Bad",
+    "Planet Earth II",
+    "Band of Brothers",
+    "Chernobyl", 
+    "Game of Thrones"
+  ),
+  URLs = url_of_5Shows
+) 
+
+#function for scraping reviews
+scrape_reviews <- function(show_url) {
+  page <- read_html(show_url)
+  
+  # scrape usernames
+  usernames <- page %>%
+    html_nodes('[data-testid="author-link"]') %>%
+    html_text()
+  
+  # scrape review dates
+  review_dates <- page %>%
+    html_nodes('li.review-date') %>%
+    html_text()
+  
+  #scrape user rating
+  user_rating <- page %>%
+    html_nodes('span.ipc-rating-star--rating') %>%
+    html_text()
+  
+  #scrape user's review title
+  rev_title <- page %>%
+    html_nodes('h3.ipc-title__text') %>%
+    html_text()
+  
+  #two codeblocks below are still being fixed
+  #scrape helpful reviews
+  helpful_rev <- page %>%
+    html_nodes('span.count--up') %>%
+    html_text()
+  
+  #scrape not helpful reviews
+  not_helpful <- page %>%
+    html_nodes('span.count--down') %>%
+    html_text()
+  
+  data.frame(Usernames = head(usernames, 20), Dates = head(review_dates, 20), User_Rating = head(user_rating, 20), Review_Title = head(rev_title, 20))
+}
+
+reviews_data <- lapply(five_shows_url_df$URLs, scrape_reviews)
+names(reviews_data) <- five_shows_url_df$Title
+reviews_data[["Breaking Bad"]]
+reviews_data[["Planet Earth II"]]
+reviews_data[["Band of Brothers"]]
+reviews_data[["Chernobyl"]]
+reviews_data[["Game of Thrones"]]
 
 ```
-
 
 3. Time series for tv shows released by year and the most number of tv
 shows released.
