@@ -279,25 +279,20 @@ amazon_products <- function(url) {
   price <- page %>%
     html_nodes("span.a-price-whole") %>%
     html_text() %>%
-    gsub("\\.", "", .)
+    gsub("\\.", "", .) %>%
+    as.numeric()
   
   ratings <- page %>%
     html_nodes("span.a-icon-alt") %>%
     html_text() %>%
     gsub(" out of 5 stars", "", .) %>%
-    gsub(" Stars & Up", "", .)
-  
-  prod_link <- page %>%
-    html_nodes("a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal") %>%
-    html_attr("href") %>%
-    unique() %>%
-    paste0("https://www.amazon.com", .)
+    gsub(" Stars & Up", "", .) %>%
+    as.numeric()
   
   data.frame(
     Description = name[1:30],
     Price = price[1:30],
-    Ratings = ratings[1:30],
-    link = prod_link[1:30]
+    Ratings = ratings[1:30]
   )
 }
 
@@ -374,6 +369,7 @@ laptop_category <- cbind(products[["Laptops"]], laptop_reviews)
 accessories_category <- cbind(products[["Accessories"]], accessories_reviews)
 sports_category <- cbind(products[["Sports"]], sports_reviews)
 clothing_category <- cbind(products[["Clothing"]], clothing_reviews)
+
 ```
 
 6. Describe the data you have extracted.
@@ -390,5 +386,74 @@ The extracted data consists of information from the five  categories we have sel
 If we use the extracted data, we can aim to evaluate the value for money offered by different product categories based on their average rating and average price. By calculating the rating-to-price ratio for each category, we can identify which categories provide the best perceived quality relative to their cost. 
 
 ##### END #####
+
+
+8. Create graphs regarding the use case, and briefly explain it.
+```{r}
+#function to get rating to price ratio
+calculate_ratio <- function(category_df) {
+  
+  category_df$Ratings[is.na(category_df$Ratings)] <- mean(category_df$Ratings, na.rm = TRUE)
+  category_df$Price[is.na(category_df$Price)] <- mean(category_df$Price, na.rm = TRUE)
+  
+  mean_rating <- mean(category_df$Ratings, na.rm = TRUE)
+  mean_price <- mean(category_df$Price, na.rm = TRUE)
+  rating_to_price_ratio <- mean_rating / mean_price
+  
+  list(
+    Mean_Rating = mean_rating,
+    Mean_Price = mean_price,
+    Rating_to_Price_Ratio = rating_to_price_ratio
+  )
+}
+
+backpack_analysis <- calculate_ratio(backpack_category)
+laptop_analysis <- calculate_ratio(laptop_category)
+accessories_analysis <- calculate_ratio(accessories_category)
+sports_analysis <- calculate_ratio(sports_category)
+clothing_analysis <- calculate_ratio(clothing_category)
+
+#combining all the rating to price ratio of all categories
+use_case_df <- data.frame(
+  Category = c("Backpacks", "Laptops", "Accessories", "Sports", "Clothing"),
+  Mean_Rating = c(
+    backpack_analysis$Mean_Rating,
+    laptop_analysis$Mean_Rating, 
+    accessories_analysis$Mean_Rating,
+    sports_analysis$Mean_Rating, 
+    clothing_analysis$Mean_Rating),
+  
+  Mean_Price = c(
+    backpack_analysis$Mean_Price, 
+    laptop_analysis$Mean_Price, 
+    accessories_analysis$Mean_Price,
+    sports_analysis$Mean_Price, 
+    clothing_analysis$Mean_Price),
+  
+  Rating_to_Price_Ratio = c(
+    backpack_analysis$Rating_to_Price_Ratio, 
+    laptop_analysis$Rating_to_Price_Ratio, 
+    accessories_analysis$Rating_to_Price_Ratio, 
+    sports_analysis$Rating_to_Price_Ratio, 
+    clothing_analysis$Rating_to_Price_Ratio)
+)
+
+# Print the analysis
+print(use_case_df)
+
+```
+### Graph for use case ###
+
+The graph allows for easy comparison of how well each category performs in terms of value for money. Categories with taller bars indicate a higher rating-to-price ratio, suggesting better perceived value for money
+```{r}
+barplot(
+  use_case_df$Rating_to_Price_Ratio,
+  names.arg = use_case_df$Category,
+  main = "Rating to Price Ratio by Category",
+  xlab = "Category",
+  ylab = "Rating to Price Ratio",
+  col =  rainbow(nrow(use_case_df))
+)
+```
 
 
