@@ -375,7 +375,7 @@ clothing_category <- cbind(products[["Clothing"]], clothing_reviews)
 6. Describe the data you have extracted.
 ##### START #####
 
-The extracted data consists of information from the five  categories we have selected  from Amazon. These include: Backpacks, Laptops, Phone Cases, Mountain Bikes, and T-Shirts. For each category, 30 products were selected, resulting in a total of 150 products with details including price, description, ratings, and reviews for each product.
+The extracted data consists of information from the five  categories we have selected  from Amazon. These include: Backpacks, Laptops, Accessories, Sports, and Clothing. For each category, 30 products were selected, resulting in a total of 150 products with details including price, description, ratings, and reviews for each product.
 
 ##### END #####
 
@@ -438,7 +438,6 @@ use_case_df <- data.frame(
     clothing_analysis$Rating_to_Price_Ratio)
 )
 
-# Print the analysis
 print(use_case_df)
 
 ```
@@ -456,4 +455,100 @@ barplot(
 )
 ```
 
+
+9. Graph the price and the ratings for each category. Use basic plotting functions and ggplot2 package.
+```{r}
+library(ggplot2)
+
+plot_df <- data.frame(
+  Category = rep(
+    c("Backpacks", 
+      "Laptops",
+      "Accessories",
+      "Sports",
+      "Clothing"),
+      each = length(backpack_category$Price)),
+  
+  Price = c(
+    backpack_category$Price, 
+    laptop_category$Price, 
+    accessories_category$Price, 
+    sports_category$Price,
+    clothing_category$Price),
+  
+  Ratings = c(
+    backpack_category$Ratings,
+    laptop_category$Ratings,
+    accessories_category$Ratings,
+    sports_category$Ratings, 
+    clothing_category$Ratings)
+)
+
+# scatterplot using ggplot2
+ggplot(combined_df, aes(x = Price, y = Ratings, color = Category)) +
+  geom_point(size = 2) + 
+  labs(
+    title = "Price vs Ratings for Different Categories",
+    x = "Price",
+    y = "Ratings"
+  ) +
+  theme_minimal() 
+```
+
+10. Rank the products of each category by price and ratings. Explain briefly.
+```{r}
+library(dplyr)
+
+# Backpacks
+backpack_ranked <- backpack_category %>%
+  mutate(
+    Rank_by_Price = rank(Price, ties.method = "min"),  
+    Rank_by_Rating = rank(-Ratings, ties.method = "min")  
+  ) %>%
+  arrange(Rank_by_Price, Rank_by_Rating)
+
+# Laptops
+laptop_ranked <- laptop_category %>%
+  mutate(
+    Rank_by_Price = rank(Price, ties.method = "min"),
+    Rank_by_Rating = rank(-Ratings, ties.method = "min")
+  ) %>%
+  arrange(Rank_by_Price, Rank_by_Rating)
+
+# Accessories
+accessories_ranked <- accessories_category %>%
+  mutate(
+    Rank_by_Price = rank(Price, ties.method = "min"),
+    Rank_by_Rating = rank(-Ratings, ties.method = "min")
+  ) %>%
+  arrange(Rank_by_Price, Rank_by_Rating)
+
+# Sports
+sports_ranked <- sports_category %>%
+  mutate(
+    Rank_by_Price = rank(Price, ties.method = "min"),
+    Rank_by_Rating = rank(-Ratings, ties.method = "min")
+  ) %>%
+  arrange(Rank_by_Price, Rank_by_Rating)
+
+# Clothing
+clothing_ranked <- clothing_category %>%
+  mutate(
+    Rank_by_Price = rank(Price, ties.method = "min"),
+    Rank_by_Rating = rank(-Ratings, ties.method = "min")
+  ) %>%
+  arrange(Rank_by_Price, Rank_by_Rating)
+
+ print(backpack_ranked)
+ print(laptop_ranked)
+ print(accessories_ranked)
+ print(sports_ranked)
+ print(clothing_ranked)
+# The data frames displays products grouped by category, showing each product's name and description along with its rank based on price (lower prices get higher ranks) and rating (higher ratings get higher ranks), in the occurence of ties, the higher ranking is prioritized.
+ write.csv(backpack_ranked, "BackpackRanking.csv", row.names = FALSE)
+ write.csv(laptop_ranked, "LaptopRanking.csv", row.names = FALSE)
+ write.csv(accessories_ranked, "AccessoriesRanking.csv", row.names = FALSE)
+ write.csv(sports_ranked, "SportsRanking.csv", row.names = FALSE)
+ write.csv(clothing_ranked, "ClothingRanking.csv", row.names = FALSE)
+```
 
