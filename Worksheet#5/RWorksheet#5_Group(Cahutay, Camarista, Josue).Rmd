@@ -130,7 +130,6 @@ shows
 ```
 
 
-
 2. 5 tv shows to scrape 20 user reviews.
 ```{r}
 #links of the 5 shows I want to scrape
@@ -181,6 +180,7 @@ scrape_reviews <- function(show_url) {
     html_nodes('h3.ipc-title__text') %>%
     html_text()
   
+  #scrape user text reviews
   text_rev <- page %>%
     html_nodes('div.ipc-html-content-inner-div') %>%
     html_text()
@@ -212,7 +212,6 @@ reviews_data[["Planet Earth II"]]
 reviews_data[["Band of Brothers"]]
 reviews_data[["Chernobyl"]]
 reviews_data[["Game of Thrones"]]
-
 ```
 
 3. Time series for tv shows released by year and the most number of tv
@@ -235,8 +234,6 @@ print(most_shows_year)
 
 ```
 
-
- - Below is the Amazon Data authored by Camarista
 ```{r}
 # Load necessary libraries
 library(rvest)
@@ -245,6 +242,12 @@ library(dplyr)
 library(polite)
 library(stringr)
 
+
+url <- "https://www.amazon.com/"
+session <- bow(url, 
+               user_agent = "Educational")
+session
+
 # Define URLs
 urls <- c('https://www.amazon.com/s?k=backpacks&crid=35ZQ1H72MC3G9&sprefix=backpacks%2Caps%2C590&ref=nb_sb_ss_ts-doa-p_3_9', 
           'https://www.amazon.com/s?k=laptops&crid=L7MQBW7MD4SX&sprefix=laptopb%2Caps%2C1304&ref=nb_sb_noss_2',
@@ -252,66 +255,56 @@ urls <- c('https://www.amazon.com/s?k=backpacks&crid=35ZQ1H72MC3G9&sprefix=backp
           'https://www.amazon.com/s?k=mountain+bike&crid=1ZQR71S8XHZN6&sprefix=mountain+bik%2Caps%2C499&ref=nb_sb_noss_2',
           'https://www.amazon.com/s?k=tshirt&crid=2RQIP7MP6IYAW&sprefix=tshirt%2Caps%2C443&ref=nb_sb_noss_2')
 
+category_df <- data.frame(
+  URL = urls,
+  Category = c(
+    "Backpacks",
+    "Laptops",
+    "Accessories",
+    "Sports",
+    "Clothing"
+  )
+)
 ```
 
 
 ```{r}
-
-
-df <- list()
-
-for (i in seq_along(urls)) {
+amazon_products <- function(url) {
+  page <- read_html(url)
   
-    session <- bow(urls[i], user_agent = "Educational")
+  name <- page %>%
+    html_nodes("h2.a-size-mini") %>%
+    html_text() 
   
-  product_name <- scrape(session) %>%
-    html_nodes('h2.a-size-mini') %>% 
+  price <- page %>%
+    html_nodes("span.a-price-whole") %>%
     html_text() %>%
-    head(30) 
-
+    gsub("\\.", "", .)
   
-  product_description <- scrape(session) %>%
-    html_nodes('div.productDescription') %>% 
+  ratings <- page %>%
+    html_nodes("span.a-icon-alt") %>%
     html_text() %>%
-    head(30) 
+    gsub(" out of 5 stars", "", .) %>%
+    gsub(" Stars & Up", "", .)
   
-
-  product_rating <- scrape(session) %>%
-    html_nodes('span.a-icon-alt') %>% 
-    html_text() %>%
-    head(30)  
-  ratings <- as.numeric(str_extract(product_rating, "\\d+\\.\\d"))
+  prod_link <- page %>%
+    html_nodes("a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal") %>%
+    html_attr("href") %>%
+    paste0("https://www.amazon.com", .)
   
-  
-  product_price <- scrape(session) %>%
-    html_nodes('span.a-price') %>% 
-    html_text() %>%
-    head(30) 
-  price <- as.numeric(str_extract(product_price, "\\d+\\.\\d+"))
-  
-  
-  product_review <- scrape(session) %>%
-    html_nodes('div.review-text-content') %>% 
-    html_text() %>%
-    head(30)  
-  
-  
-  dfTemp <- data.frame(Product_Name = product_name[1:30],
-                       Description = product_description[1:30],
-                       Rating = ratings[1:30],
-                       Price = price[1:30],
-                       stringsAsFactors = FALSE)
-  
-  df[[i]] <- dfTemp
+  data.frame(
+    Name = name[1:30],
+    Price = price[1:30],
+    Ratings = ratings[1:30],
+    link = prod_link[1:30]
+  )
 }
 
+products <- lapply(urls, amazon_products)
+names(products) <- category_df$Category
+products[["Backpacks"]]
+products[["Laptops"]]
+products[["Accessories"]]
+products[["Sports"]]
+products[["Clothing"]]
 ```
-
-```{r}
-print(df[[1]])
-print(df[[2]])
-print(df[[3]])
-print(df[[4]])
-print(df[[5]])
-```
-
