@@ -27,7 +27,6 @@ session
 title_list <- read_html(url) %>%
   html_nodes('.ipc-title__text') %>%
   html_text()
-title_list
 ```
 
 ```{r}
@@ -60,7 +59,7 @@ clean_votes <- gsub('[()]', '', voter_ls)
 
 #extracted the number of episodes
 eps_ls <- read_html(url) %>%
-  html_nodes('span.exckou.cli-title-metadata-item:nth-of-type(2)') %>%
+  html_nodes('span.sc-300a8231-7.eaXxft.cli-title-metadata-item:nth-of-type(2)') %>%
   html_text()
 clean_eps <- gsub('[eps]', '', eps_ls)
 num_eps <- as.numeric(clean_eps)
@@ -68,7 +67,7 @@ num_eps <- as.numeric(clean_eps)
 
 #extracted the year released 
 years <- read_html(url) %>%
-  html_nodes('span.exckou.cli-title-metadata-item:nth-of-type(1)') %>%
+  html_nodes('span.sc-300a8231-7.eaXxft.cli-title-metadata-item:nth-of-type(1)') %>%
   html_text()
 ```
 
@@ -82,6 +81,7 @@ top_tv_shows <- data.frame(
   Year = years
 )
 top_tv_shows
+#displays the data frame of top tv shows, with their Rank, Title, Rating, Number of Voters, Episodes, and Year released
 ```
 
 Number of user reviews
@@ -127,8 +127,8 @@ show_data <- lapply(links, function(link) {
 show_url_df <- do.call(rbind, show_data)
 shows <- cbind(top_tv_shows, show_url_df)
 shows
+#shows df with user reviews, critic reviews, and popularity ratings.
 ```
-
 
 2. 5 tv shows to scrape 20 user reviews.
 ```{r}
@@ -231,9 +231,9 @@ ggplot(data.frame(Year = years), aes(x = Year)) +
 most_shows_year <- as.data.frame(table(years))
 most_shows_year <- most_shows_year[which.max(most_shows_year$Freq), ]
 print(most_shows_year)
-
 ```
 
+4. Select 5 categories from Amazon and select 30 products from each category.
 ```{r}
 # Load necessary libraries
 library(rvest)
@@ -241,7 +241,6 @@ library(httr)
 library(dplyr)
 library(polite)
 library(stringr)
-
 
 url <- "https://www.amazon.com/"
 session <- bow(url, 
@@ -267,7 +266,8 @@ category_df <- data.frame(
 )
 ```
 
-
+5. Extract the price, description, ratings and reviews of each product.
+  - Code to scrape price, description, and ratings of each products:
 ```{r}
 amazon_products <- function(url) {
   page <- read_html(url)
@@ -290,10 +290,11 @@ amazon_products <- function(url) {
   prod_link <- page %>%
     html_nodes("a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal") %>%
     html_attr("href") %>%
+    unique() %>%
     paste0("https://www.amazon.com", .)
   
   data.frame(
-    Name = name[1:30],
+    Description = name[1:30],
     Price = price[1:30],
     Ratings = ratings[1:30],
     link = prod_link[1:30]
@@ -308,3 +309,86 @@ products[["Accessories"]]
 products[["Sports"]]
 products[["Clothing"]]
 ```
+
+Code to scrape reviews of each products
+```{r}
+reviews_scrape <- function(url) {
+  page <- read_html(url)
+  
+  review_link <- page %>%
+    html_nodes("a.a-link-normal.s-underline-text.s-underline-link-text.s-link-style.a-text-normal") %>%
+    html_attr("href") %>%
+    unique() %>%
+    paste0("https://www.amazon.com", .)
+  
+  data.frame(
+    review_links = review_link[1:30]
+  )
+}
+
+review_links_df <- lapply(urls, reviews_scrape)
+
+backpack <- review_links_df[[1]]$review_links
+laptops <- review_links_df[[2]]$review_links
+accessories <- review_links_df[[3]]$review_links
+sports <- review_links_df[[4]]$review_links
+clothing <- review_links_df[[5]]$review_links
+
+reviews_text <- function(urls) {
+  
+  results <- data.frame(
+    Reviews = character(length(urls)),  
+    stringsAsFactors = FALSE
+  )
+  
+  # loop through each URL
+  for (i in seq_along(urls)) {
+    if (is.na(urls[i])) {
+      results$Reviews[i] <- NA
+    } else {
+      # scrape reviews
+      page <- read_html(urls[i])
+      reviews_data <- page %>%
+        html_nodes("p.a-spacing-small") %>%
+        .[1] %>%
+        html_text()
+
+      results$Reviews[i] <- if (length(reviews_data) > 0) reviews_data else NA
+    }
+  }
+  
+  return(results)
+}
+
+backpack_reviews <- reviews_text(backpack)
+laptop_reviews <- reviews_text(laptops)
+accessories_reviews <- reviews_text(accessories)
+sports_reviews <- reviews_text(sports)
+clothing_reviews <- reviews_text(clothing)
+```
+
+Complete Data Frame of price, description, ratings and reviews of each product.
+```{r}
+backpack_category <- cbind(products[["Backpacks"]], backpack_reviews)
+laptop_category <- cbind(products[["Laptops"]], laptop_reviews)
+accessories_category <- cbind(products[["Accessories"]], accessories_reviews)
+sports_category <- cbind(products[["Sports"]], sports_reviews)
+clothing_category <- cbind(products[["Clothing"]], clothing_reviews)
+```
+
+6. Describe the data you have extracted.
+##### START #####
+
+The extracted data consists of information from the five  categories we have selected  from Amazon. These include: Backpacks, Laptops, Phone Cases, Mountain Bikes, and T-Shirts. For each category, 30 products were selected, resulting in a total of 150 products with details including price, description, ratings, and reviews for each product.
+
+##### END #####
+
+
+7. What will be your use case for the data you have extracted?
+##### START #####
+
+If we use the extracted data, we can aim to evaluate the value for money offered by different product categories based on their average rating and average price. By calculating the rating-to-price ratio for each category, we can identify which categories provide the best perceived quality relative to their cost. 
+
+##### END #####
+
+
