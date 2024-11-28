@@ -1,0 +1,148 @@
+---
+title: "5b_trial"
+author: "John Lyxton Camarista"
+date: "2024-11-28"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(httr)
+library(dplyr)
+library(polite)
+library(stringr)
+library(purrr)
+
+```
+
+```{r}
+urls <- c(
+  'https://www.amazon.com/s?k=backpacks&crid=35ZQ1H72MC3G9&sprefix=backpacks%2Caps%2C590&ref=nb_sb_ss_ts-doa-p_3_9',
+  'https://www.amazon.com/s?k=laptops&crid=L7MQBW7MD4SX&sprefix=laptopb%2Caps%2C1304&ref=nb_sb_noss_2',
+  'https://www.amazon.com/s?k=phone+case&dc&crid=1VPDCJ87S93TL&sprefix=phone+cas%2Caps%2C451&ref=a9_asc_1',
+  'https://www.amazon.com/s?k=mountain+bike&crid=1ZQR71S8XHZN6&sprefix=mountain+bik%2Caps%2C499&ref=nb_sb_noss_2',
+  'https://www.amazon.com/s?k=tshirt&crid=2RQIP7MP6IYAW&sprefix=tshirt%2Caps%2C443&ref=nb_sb_noss_2'
+)
+
+```
+
+```{r}
+product_urls <- list()
+
+for (i in seq_along(urls)) {
+  session <- bow(urls[i], user_agent = "Educational")
+  page <- scrape(session)
+  
+  products <- page %>%
+    html_nodes('a.a-link-normal.s-no-outline') %>% 
+    html_attr('href') %>%
+    head(30)
+  
+  full_urls <- paste0("https://www.amazon.com", products)
+  product_urls[[i]] <- head(full_urls, 10)
+}
+
+```
+
+```{r}
+reviews <- list()
+
+for (category_urls in product_urls) {
+  for (product_url in category_urls) {
+    session <- bow(product_url, user_agent = "Educational")
+    product_page <- scrape(session)
+    
+    see_all_reviews <- product_page %>%
+      html_nodes('a[data-hook="see-all-reviews-link-foot"]') %>%
+      html_attr('href') %>%
+      paste0("https://www.amazon.com", .)
+    
+    if (length(see_all_reviews) > 0) {
+      review_url <- see_all_reviews[1]
+      review_session <- bow(review_url, user_agent = "Educational")
+      
+      # Pagination for reviews
+      for (page in 1:2) {
+        review_page <- scrape(review_session)
+        
+        reviewers <- review_page %>%
+          html_nodes('span.a-profile-name') %>%
+          html_text(trim = TRUE)
+        
+        review_dates <- review_page %>%
+          html_nodes('span.review-date') %>%
+          html_text(trim = TRUE) %>%
+          str_extract("[A-Za-z]+ \\d{1,2}, \\d{4}") %>%
+          as.Date(format = "%B %d, %Y")
+        
+        ratings <- review_page %>%
+          html_nodes('i[data-hook="review-star-rating"] span.a-icon-alt') %>%
+          html_text(trim = TRUE) %>%
+          str_extract("\\d+\\.\\d") %>%
+          as.numeric()
+        
+        titles <- review_page %>%
+          html_nodes('a[data-hook="review-title"] span') %>%
+          html_text(trim = TRUE)
+        
+        review_texts <- review_page %>%
+          html_nodes('span[data-hook="review-body"] span') %>%
+          html_text(trim = TRUE)
+        
+        verified <- review_page %>%
+          html_nodes('span[data-hook="avp-badge"]') %>%
+          html_text(trim = TRUE) %>%
+          str_detect("Verified Purchase")
+        
+        review_data <- data.frame(
+          Reviewer = reviewers[1:20],
+          Date = review_dates[1:20],
+          Rating = ratings[1:20],
+          Title = titles[1:20],
+          Review = review_texts[1:20],
+          Verified = verified[1:20],
+          stringsAsFactors = FALSE
+        )
+        
+        reviews <- append(reviews, list(review_data))
+        
+        next_page <- review_page %>%
+          html_nodes('li.a-last a') %>%
+          html_attr('href')
+        
+        if (length(next_page) > 0) {
+          review_session <- bow(paste0("https://www.amazon.com", next_page[1]), user_agent = "Educational")
+        } else {
+          break
+        }
+      }
+    }
+  }
+}
+
+```
+
+
+```{r}
+print(product_urls[[1]])
+
+print(reviews[[1]])
+
+verified
+
+review_text
+
+titles
+
+ratings
+
+review_dates
+
+reviewer
+```
+
+
