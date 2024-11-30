@@ -86,7 +86,7 @@ scrape_reviews <- function(url) {
   page <- read_html(url)
                     
   product_name <- page %>%
-    html_nodes(".a-size-large product-title-word-break") %>%
+    html_nodes(".a-size-large.product-title-word-break") %>%
     html_text(trim = T) %>%
     strsplit(" ") %>%                
     .[[1]] %>%                       
@@ -99,21 +99,88 @@ scrape_reviews <- function(url) {
     html_text() %>%
     unique()
   
+  review_dates <- page %>%
+    html_nodes(".a-size-base.a-color-secondary.review-date") %>%
+    html_text() %>%
+    gsub(".*on ", "", .)
+  
+  reviewer_rating <- page %>%
+    html_nodes(".a-icon-alt") %>%
+    html_text() %>%
+    gsub(" out.*", "", .) %>%
+    .[grepl("^[0-9.]+$", .)] %>% 
+    as.numeric()
+  
+  review_title <- page %>%
+    html_nodes(".a-size-base.a-link-normal.review-title.a-color-base.review-title-content.a-text-bold span:nth-of-type(2)") %>%
+    html_text()
+  
   data.frame(
     Product_Name = rep(product_name, 20),
-    Reviewer_Names = user_name_reviews[2:21])
+    Reviewer_Names = user_name_reviews[2:21],
+    Review_Date = review_dates[1:20],
+    Individual_Ratings = reviewer_rating[1:20],
+    Review_Title = review_title[1:20]
+    )
 }
 
+#applying scrape reviews to each of the product category's links
 bag_reviews <- lapply(backpack_products_link, scrape_reviews)
 laptop_reviews <- lapply(laptop_products_link, scrape_reviews)
+accessories_reviews <- lapply(accessories_products_link, scrape_reviews)
+sports_reviews <- lapply(sports_products_link, scrape_reviews)
+clothing_reviews <- lapply(clothing_products_link, scrape_reviews)
 ```
 
 ```{r}
-  cleaned_prod_name_raw <- strsplit(product_name_raw, " ")[[1]]  # Split the product name
-  cleaned_prod_name <- cleaned_prod_name_raw[1:4]  # Take the first 4 words
-  cleaned_prod_name <- gsub("\\,", "", cleaned_prod_name)  # Remove commas
-  cleaned_prod_name <- paste(cleaned_prod_name, collapse = " ") 
+#combining the data frames of the product reviews per category
+backpack_reviews_df <- do.call(rbind, bag_reviews)
+laptop_reviews_df <- do.call(rbind, laptop_reviews)
+accessories_reviews_df <- do.call(rbind, accessories_reviews)
+sports_reviews_df <- do.call(rbind, sports_reviews)
+clothing_reviews_df <- do.call(rbind, clothing_reviews)
 ```
 
+```{r}
+print(backpack_reviews_df)
+print(laptop_reviews_df)
+print(accessories_reviews_df)
+print(sports_reviews_df)
+print(clothing_reviews_df)
+```
+
+```{r}
+#debug chunks
+url <- "https://www.amazon.com/Travel-Laptop-Backpack-Charging-Laptops/dp/B07V4R4Z77/ref=sr_1_1?crid=35ZQ1H72MC3G9&dib=eyJ2IjoiMSJ9.J_ySkNuBZwbP4xXsfsew4I1jG-_zuvtZwWtvmM8MlgQyCEv5GvF5EXBeElZ1WZRubPSKpkzojztlzTX98o_1ChiDU3z49vGJAb3MoSlbOFWvFgvc4kfXaEuZiZFpabKurXqKJBH7JVqXai2hT-LO8WKkV8fKObbNwYCjKFTguSykwyXxreFtFOdzRDUtabWdjmY83ekXAxC01sP1KANpWeqs7UOsgwg8fSHi7XxRN58.Z_OLBvsDXZNKtrf5OaoheFKuKFV92LYEvUsiBNUfLVw&dib_tag=se&keywords=backpacks&qid=1732950463&sprefix=backpacks%2Caps%2C590&sr=8-1&th=1"
+
+product_name <- read_html(url) %>%
+    html_nodes(".a-size-large.product-title-word-break") %>%
+    html_text(trim = T) %>%
+    strsplit(" ") %>%                
+    .[[1]] %>%                       
+    .[1:4] %>%
+    gsub("\\,", "", .) %>%
+    paste(collapse = " ")  
+
+review_dates <- read_html(url) %>%
+    html_nodes(".a-size-base.a-color-secondary.review-date") %>%
+    html_text() %>%
+    gsub(".*on ", "", .)
+
+rating <- read_html(url) %>%
+  html_nodes(".a-icon-alt") %>%
+  html_text() %>%
+  gsub(" out.*", "", .) %>%
+  .[grepl("^[0-9.]+$", .)] %>% 
+  as.numeric()
+
+title_rev <- read_html(url) %>%
+  html_nodes(".a-size-base.a-link-normal.review-title.a-color-base.review-title-content.a-text-bold span:nth-of-type(2)") %>%
+  html_text()
+
+text_reviews <- read_html(url) %>%
+  html_nodes(".a-expander-content.reviewText.review-text-content.a-expander-partial-collapse-content") %>%
+  html_text(trim = TRUE)
+```
 
 
