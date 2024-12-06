@@ -545,10 +545,5 @@ clothing_ranked <- clothing_category %>%
  print(sports_ranked)
  print(clothing_ranked)
 # The data frames displays products grouped by category, showing each product's name and description along with its rank based on price (lower prices get higher ranks) and rating (higher ratings get higher ranks), in the occurence of ties, the higher ranking is prioritized.
- write.csv(backpack_ranked, "BackpackRanking.csv", row.names = FALSE)
- write.csv(laptop_ranked, "LaptopRanking.csv", row.names = FALSE)
- write.csv(accessories_ranked, "AccessoriesRanking.csv", row.names = FALSE)
- write.csv(sports_ranked, "SportsRanking.csv", row.names = FALSE)
- write.csv(clothing_ranked, "ClothingRanking.csv", row.names = FALSE)
 ```
 
