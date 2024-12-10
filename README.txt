@@ -1,0 +1,2 @@
+The debugging-files folder is where we test our codes first before moving it to our final activity files.
+This is where we tested most of our codes in our Worksheet5b. Check this folder for history our changes.
