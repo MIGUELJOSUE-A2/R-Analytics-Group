@@ -273,7 +273,7 @@ amazon_products <- function(url) {
   page <- read_html(url)
   
   name <- page %>%
-    html_nodes("h2.a-size-mini") %>%
+    html_nodes(".a-size-medium.a-spacing-none.a-color-base.a-text-normal") %>%
     html_text() 
   
   price <- page %>%
@@ -383,117 +383,84 @@ The extracted data consists of information from the five  categories we have sel
 7. What will be your use case for the data you have extracted?
 ##### START #####
 
-If we use the extracted data, we can aim to evaluate the value for money offered by different product categories based on their average rating and average price. By calculating the rating-to-price ratio for each category, we can identify which categories provide the best perceived quality relative to their cost. 
+If we use the extracted data, we can aim to evaluate the value for money offered by different product categories based on their rating and price. By calculating the rating-to-price ratio for each category, we can identify which categories provide the best perceived quality relative to their cost. 
 
 ##### END #####
 
 
 8. Create graphs regarding the use case, and briefly explain it.
-```{r}
-#function to get rating to price ratio
-calculate_ratio <- function(category_df) {
-  
-  category_df$Ratings[is.na(category_df$Ratings)] <- mean(category_df$Ratings, na.rm = TRUE)
-  category_df$Price[is.na(category_df$Price)] <- mean(category_df$Price, na.rm = TRUE)
-  
-  mean_rating <- mean(category_df$Ratings, na.rm = TRUE)
-  mean_price <- mean(category_df$Price, na.rm = TRUE)
-  rating_to_price_ratio <- mean_rating / mean_price
-  
-  list(
-    Mean_Rating = mean_rating,
-    Mean_Price = mean_price,
-    Rating_to_Price_Ratio = rating_to_price_ratio
-  )
-}
-
-backpack_analysis <- calculate_ratio(backpack_category)
-laptop_analysis <- calculate_ratio(laptop_category)
-accessories_analysis <- calculate_ratio(accessories_category)
-sports_analysis <- calculate_ratio(sports_category)
-clothing_analysis <- calculate_ratio(clothing_category)
-
-#combining all the rating to price ratio of all categories
-use_case_df <- data.frame(
-  Category = c("Backpacks", "Laptops", "Accessories", "Sports", "Clothing"),
-  Mean_Rating = c(
-    backpack_analysis$Mean_Rating,
-    laptop_analysis$Mean_Rating, 
-    accessories_analysis$Mean_Rating,
-    sports_analysis$Mean_Rating, 
-    clothing_analysis$Mean_Rating),
-  
-  Mean_Price = c(
-    backpack_analysis$Mean_Price, 
-    laptop_analysis$Mean_Price, 
-    accessories_analysis$Mean_Price,
-    sports_analysis$Mean_Price, 
-    clothing_analysis$Mean_Price),
-  
-  Rating_to_Price_Ratio = c(
-    backpack_analysis$Rating_to_Price_Ratio, 
-    laptop_analysis$Rating_to_Price_Ratio, 
-    accessories_analysis$Rating_to_Price_Ratio, 
-    sports_analysis$Rating_to_Price_Ratio, 
-    clothing_analysis$Rating_to_Price_Ratio)
-)
-
-print(use_case_df)
-
-```
-### Graph for use case ###
 
 The graph allows for easy comparison of how well each category performs in terms of value for money. Categories with taller bars indicate a higher rating-to-price ratio, suggesting better perceived value for money
 ```{r}
-barplot(
-  use_case_df$Rating_to_Price_Ratio,
-  names.arg = use_case_df$Category,
-  main = "Rating to Price Ratio by Category",
-  xlab = "Category",
-  ylab = "Rating to Price Ratio",
-  col =  rainbow(nrow(use_case_df))
+df_combined <- rbind(
+  cbind(backpack_category, Product_Name = backpack_category$Description, Category = "Backpacks"),
+  cbind(laptop_category, Product_Name = laptop_category$Description, Category = "Laptops"),
+  cbind(accessories_category, Product_Name = accessories_category$Description, Category = "Accessories"),
+  cbind(sports_category, Product_Name = sports_category$Description, Category = "Sports"),
+  cbind(clothing_category, Product_Name = clothing_category$Description, Category = "Clothing")
 )
+
+
+df_combined$Price <- as.numeric(as.character(df_combined$Price))
+df_combined$Ratings <- as.numeric(as.character(df_combined$Ratings))
+
+df_combined <- df_combined %>%
+  mutate(rating_to_price_ratio = Ratings / Price)
+
+categories <- unique(df_combined$Category)
+
+par(mfrow = c(ceiling(length(categories) / 2), 2))
+
+for (category in categories) {
+  category_products <- df_combined %>% filter(Category == category)
+  short_name <- sapply(category_products$Description, function(x) {
+    paste(strsplit(x, " ")[[1]][1:2], collapse = " ")
+  })
+  
+  barplot(
+    category_products$rating_to_price_ratio,
+    names.arg = short_name,
+    main = paste("Rating to Price Ratio for", category),
+    ylab = "Rating to Price Ratio",
+    col = rainbow(nrow(category_products)),
+    las = 2,
+    cex.names = 0.5
+  )
+}
+
+
 ```
 
 
 9. Graph the price and the ratings for each category. Use basic plotting functions and ggplot2 package.
+###Basic Plotting##
 ```{r}
+library(dplyr)
 library(ggplot2)
+# Base R Plotting
+par(mfrow = c(2, 3))  
 
-plot_df <- data.frame(
-  Category = rep(
-    c("Backpacks", 
-      "Laptops",
-      "Accessories",
-      "Sports",
-      "Clothing"),
-      each = length(backpack_category$Price)),
+for (cat in unique(df_combined$Category)) {
+  data <- df_combined[df_combined$Category == cat, ]
   
-  Price = c(
-    backpack_category$Price, 
-    laptop_category$Price, 
-    accessories_category$Price, 
-    sports_category$Price,
-    clothing_category$Price),
-  
-  Ratings = c(
-    backpack_category$Ratings,
-    laptop_category$Ratings,
-    accessories_category$Ratings,
-    sports_category$Ratings, 
-    clothing_category$Ratings)
-)
+  plot(
+    data$Price, data$Ratings,
+    main = paste("Price vs Rating -", cat),
+    xlab = "Price",
+    ylab = "Rating",
+    col = "blue",
+    pch = 19  
+  )
+}
 
-# scatterplot using ggplot2
-ggplot(combined_df, aes(x = Price, y = Ratings, color = Category)) +
-  geom_point(size = 2) + 
-  labs(
-    title = "Price vs Ratings for Different Categories",
-    x = "Price",
-    y = "Ratings"
-  ) +
-  theme_minimal() 
+# ggplot2 Visualization
+ggplot(df_combined, aes(x = Price, y = Ratings, color = Category)) +
+  geom_point() +
+  facet_wrap(~Category) +  
+  labs(title = "Price vs. Rating by Category", x = "Price", y = "Rating") +
+  theme_minimal()  
 ```
+
 
 10. Rank the products of each category by price and ratings. Explain briefly.
 ```{r}
@@ -546,4 +513,3 @@ clothing_ranked <- clothing_category %>%
  print(clothing_ranked)
 # The data frames displays products grouped by category, showing each product's name and description along with its rank based on price (lower prices get higher ranks) and rating (higher ratings get higher ranks), in the occurence of ties, the higher ranking is prioritized.
 ```
-
