@@ -1,0 +1,63 @@
+---
+title: "Sentiment Analysis Project"
+author: "Cahutay, Camarista, Josue"
+date: "2024-12-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyverse)
+library(syuzhet)
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+
+tweets <- read.csv("tweetsDF.csv")
+
+tweets$text <- tweets$text %>%
+  iconv(from = "UTF-8", to = "ASCII//TRANSLIT", sub = "") %>%  # Convert to ASCII
+  tolower() %>%                                                 # Convert to lowercase
+  str_remove_all("https?://\\S+|www\\.\\S+") %>%              # Remove URLs
+  str_remove_all("(?<=\\s)[@#]\\S+|^[@#]\\S+") %>%            # Remove mentions and hashtags
+  str_replace_all("\n", " ") %>%                               # Replace newline with space
+  str_remove_all("\\?") %>%                                    # Remove question marks
+  str_remove_all("\\b\\d{2}\\.\\d{2}\\.\\d{4}\\b") %>%        # Remove date pattern
+  str_remove_all("<a href=httptwitter.comdownloadandroid.*?>|<a href=httptwitter.comdownloadiphone.*?>|<a href=.*?>") %>%  # Remove HTML 
+  str_remove_all("30102022") %>%                               # Remove specific string
+  str_remove_all("\\b(blackpink|yg|bornpink|lisa|jennie|rose|jisoo)\\b") %>%  # Remove specific terms
+  str_squish()                                                 # Remove extra whitespace
+
+
+```
+
+```{r}
+write.csv(tweets, "processed_tweets.csv", row.names = FALSE)
+```
+
+```{r}
+# Preprocess Text for Analysis
+valid_texts <- tweets$text[tweets$text != ""]
+corpus <- Corpus(VectorSource(valid_texts))
+corpus <- tm_map(corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removeWords, stopwords("en"))
+corpus <- tm_map(corpus, stripWhitespace) 
+```
+
+```{r}
+# WordCloud 
+wordcloud(corpus,
+            max.words = 100,
+            random.order = FALSE,
+            colors = brewer.pal(8, "Dark2"),
+            scale = c(3, 0.5))
+```
+
