@@ -19,45 +19,143 @@ library(tm)
 library(wordcloud)
 library(RColorBrewer)
 
-tweets <- read.csv("tweetsDF.csv")
+tweetsDF <- read.csv("tweetsDf.csv")
 
-tweets$text <- tweets$text %>%
-  iconv(from = "UTF-8", to = "ASCII//TRANSLIT", sub = "") %>%  # Convert to ASCII
-  tolower() %>%                                                 # Convert to lowercase
-  str_remove_all("https?://\\S+|www\\.\\S+") %>%              # Remove URLs
-  str_remove_all("(?<=\\s)[@#]\\S+|^[@#]\\S+") %>%            # Remove mentions and hashtags
-  str_replace_all("\n", " ") %>%                               # Replace newline with space
-  str_remove_all("\\?") %>%                                    # Remove question marks
-  str_remove_all("\\b\\d{2}\\.\\d{2}\\.\\d{4}\\b") %>%        # Remove date pattern
-  str_remove_all("<a href=httptwitter.comdownloadandroid.*?>|<a href=httptwitter.comdownloadiphone.*?>|<a href=.*?>") %>%  # Remove HTML 
-  str_remove_all("30102022") %>%                               # Remove specific string
-  str_remove_all("\\b(blackpink|yg|bornpink|lisa|jennie|rose|jisoo)\\b") %>%  # Remove specific terms
-  str_squish()                                                 # Remove extra whitespace
+full_df <- tweetsDF
+```
 
+### Codechunks for modifying/cleaning the dataset ###
+```{r}
+# Codes for cleaning the dataset
+clean <- full_df %>%
+  mutate(text = str_to_lower(text),                     
+         text = str_remove_all(text, "http\\S+"),       
+         text = str_remove_all(text, "@\\w+"),          
+         text = str_remove_all(text, "#\\w+"),          
+         text = str_remove_all(text, "\\d+"),           
+         text = str_remove_all(text, "[^\\w\\s]"),     
+         text = str_squish(text),                      
+         sentiment = get_sentiment(text, method = "bing")) 
+
+# Modified the dataset, added a date and hour column converted from the "created" column of tweetsDF
+clean <- clean %>%
+  mutate(date = ymd_hms(created)) %>%  
+  mutate(hour = hour(date))           
+```
+### END OF CLEANING ###
+
+---
+
+### Preparing data for Trend Analysis ###
+```{r}
+# Summarize tweet frequency by hour and group them by days
+hourly_summary <- clean %>%
+  group_by(day = as.Date(date), hour) %>%
+  summarise(tweet_count = n(), .groups = "drop")
+
+# Split data into separate subsets for plotting by day
+day1_tweets <- hourly_summary %>% filter(day == unique(day)[1])
+day2_tweets <- hourly_summary %>% filter(day == unique(day)[2])
+day3_tweets <- hourly_summary %>% filter(day == unique(day)[3])
+```
+
+--- Codes for plotting trend analysis ---
+```{r}
+# Graph for the first day
+day1_graph <- ggplot(day1_tweets, aes(x = factor(hour), y = tweet_count, fill = tweet_count)) +
+  geom_bar(stat = "identity") +
+  labs(title = paste("Tweet Frequency by Hour -", unique(day1_tweets$day)),
+       x = "Hour of the Day",
+       y = "Number of Tweets") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  scale_x_discrete(breaks = as.character(0:23)) +
+  theme_minimal() 
+
+# Graph for the second day
+day2_graph <- ggplot(day2_tweets, aes(x = factor(hour), y = tweet_count, fill = tweet_count)) +
+  geom_bar(stat = "identity") +
+  labs(title = paste("Tweet Frequency by Hour -", unique(day2_tweets$day)),
+       x = "Hour of the Day",
+       y = "Number of Tweets") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  scale_x_discrete(breaks = as.character(0:23)) +
+  theme_minimal() 
+
+# Graph for the third day
+day3_graph <- ggplot(day3_tweets, aes(x = factor(hour), y = tweet_count, fill = tweet_count)) +
+  geom_bar(stat = "identity") +
+  labs(title = paste("Tweet Frequency by Hour -", unique(day3_tweets$day)),
+       x = "Hour of the Day",
+       y = "Number of Tweets") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  scale_x_discrete(breaks = as.character(0:23)) +
+  theme_minimal()
+```
+
+```{r}
+#  Print graphs
+day1_graph
+day2_graph
+day3_graph
+```
+### END OF TREND ANALYSIS ###
+
+---
+
+### Preparing data for Sentiment Analysis
+```{r}
+# Categorize sentiment into Positive, Neutral, and Negative by hour per day
+sentiment_summary <- clean %>%
+  mutate(sentiment_category = ifelse(sentiment > 0, "Positive",
+                                      ifelse(sentiment < 0, "Negative", "Neutral"))) %>%
+  group_by(day = as.Date(date), hour, sentiment_category) %>%
+  summarise(count = n(), .groups = "drop")
+
+# Filter each day's data for plotting graphs
+day1_sentiments <- sentiment_summary %>% filter(day == unique(day)[1])
+day2_sentiments <- sentiment_summary %>% filter(day == unique(day)[2])
+day3_sentiments <- sentiment_summary %>% filter(day == unique(day)[3])
+```
+
+--- Codes for plotting sentiment analysis ---
+```{r}
+# Plot sentiment trends for the first day
+sentiment_day1_plot <- ggplot(day1_sentiments, aes(x = factor(hour), y = count, fill = sentiment_category)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = paste("Sentiment Distribution by Hour -", unique(day1_sentiments$day)),
+       x = "Hour of the Day",
+       y = "Number of Tweets") +
+  scale_fill_manual(values = c("red", "yellow", "green")) +
+  scale_x_discrete(breaks = as.character(0:23)) +
+  theme_minimal()
+
+# Plot sentiment trends for the second day
+sentiment_day2_plot <- ggplot(day2_sentiments, aes(x = factor(hour), y = count, fill = sentiment_category)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = paste("Sentiment Distribution by Hour -", unique(day2_sentiments$day)),
+       x = "Hour of the Day",
+       y = "Number of Tweets") +
+  scale_fill_manual(values = c("red", "yellow", "green")) +
+  scale_x_discrete(breaks = as.character(0:23)) +
+  theme_minimal()
+
+# Plot sentiment trends for the third day
+sentiment_day3_plot <- ggplot(day3_sentiments, aes(x = factor(hour), y = count, fill = sentiment_category)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = paste("Sentiment Distribution by Hour -", unique(day3_sentiments$day)),
+       x = "Hour of the Day",
+       y = "Number of Tweets") +
+  scale_fill_manual(values = c("red", "yellow", "green")) +
+  scale_x_discrete(breaks = as.character(0:23)) +
+  theme_minimal()
 
 ```
 
 ```{r}
-write.csv(tweets, "processed_tweets.csv", row.names = FALSE)
+# Print Sentiment Graphs
+sentiment_day1_plot
+sentiment_day2_plot
+sentiment_day3_plot
 ```
-
-```{r}
-# Preprocess Text for Analysis
-valid_texts <- tweets$text[tweets$text != ""]
-corpus <- Corpus(VectorSource(valid_texts))
-corpus <- tm_map(corpus, content_transformer(tolower))
-corpus <- tm_map(corpus, removePunctuation)
-corpus <- tm_map(corpus, removeNumbers)
-corpus <- tm_map(corpus, removeWords, stopwords("en"))
-corpus <- tm_map(corpus, stripWhitespace) 
-```
-
-```{r}
-# WordCloud 
-wordcloud(corpus,
-            max.words = 100,
-            random.order = FALSE,
-            colors = brewer.pal(8, "Dark2"),
-            scale = c(3, 0.5))
-```
+### END OF SENTIMENT ANALYSIS ###
 
