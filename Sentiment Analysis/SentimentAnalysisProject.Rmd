@@ -4,7 +4,8 @@ author: "Cahutay, Camarista, Josue"
 date: "2024-12-10"
 output: pdf_document
 ---
-
+ - BSIT-2A
+ 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -15,9 +16,6 @@ library(ggplot2)
 library(stringr)
 library(tidyverse)
 library(syuzhet)
-library(tm)
-library(wordcloud)
-library(RColorBrewer)
 
 tweetsDF <- read.csv("tweetsDf.csv")
 
@@ -47,6 +45,9 @@ clean <- clean %>%
 ---
 
 ### Preparing data for Trend Analysis ###
+
+  - For the trend analysis, we focused on the frequency of tweets posted per hour regarding the Itaewon incident to observe how tweet activity changed over time. By analyzing tweet counts at different hours, we aimed to identify when significant updates or news related to the incident triggered spikes in user engagement. This data helps us understand the timing of public reactions and responses, providing insights into how information spread and when people were most active in discussing the event.
+
 ```{r}
 # Summarize tweet frequency by hour and group them by days
 hourly_summary <- clean %>%
@@ -92,17 +93,33 @@ day3_graph <- ggplot(day3_tweets, aes(x = factor(hour), y = tweet_count, fill = 
   theme_minimal()
 ```
 
+--- Below are visualization and explanations of the graphs for Trend Analysis ---
 ```{r}
-#  Print graphs
+# 2022-10-28
 day1_graph
+```
+  - The first graph shows very low tweet activity throughout the day, with no significant peaks or surges. This pattern indicates that the day was relatively uneventful in terms of the incident in focus. The absence of notable tweet volume suggests that discussions were likely unrelated to the tragedy, as it had not yet occurred or gained any attention.
+
+```{r}
+# 2022-10-29
 day2_graph
+```
+  - The second graph indicates a significant rise in tweet activity starting around 3 PM, with a pronounced peak around 6 PM. This surge corresponds to the unfolding of the tragedy, as the incident likely occurred or was reported widely during this period. The increase in tweets shows how social media became a key platform for spreading information, expressing reactions, and coordinating responses as the tragedy unfolded.
+
+```{r}
+# 2022-10-30
 day3_graph
 ```
+  - The third graph displays a high volume of tweets during the early morning hours, peaking between midnight and 3 AM. Afterward, there is a steady decline in tweet activity throughout the rest of the day. The elevated tweet volume during the early hours likely reflects the aftermath of the Itaewon tragedy, as people continued sharing updates, reactions, and discussions in real time. The gradual decline suggests that as the day progressed, the urgency to tweet about the incident decreased, possibly due to the dissemination of official information or a shift in public focus.
+
 ### END OF TREND ANALYSIS ###
 
 ---
 
 ### Preparing data for Sentiment Analysis
+
+  - For the sentiment analysis, we focused on categorizing tweets into positive, neutral, and negative sentiments to observe emotional patterns throughout the day. This approach helps us understand how sentiments shift over time, providing valuable insights for responding to audience reactions.
+
 ```{r}
 # Categorize sentiment into Positive, Neutral, and Negative by hour per day
 sentiment_summary <- clean %>%
@@ -151,11 +168,23 @@ sentiment_day3_plot <- ggplot(day3_sentiments, aes(x = factor(hour), y = count, 
 
 ```
 
+---Visualization and explanation of graphs for Sentiment Analysis
 ```{r}
-# Print Sentiment Graphs
+# 2022-10-28
 sentiment_day1_plot
+```
+  - The first graph shows a relatively low volume of tweets, with no significant peaks compared to the other days. The sentiment appears balanced, with positive, neutral, and negative tweets distributed throughout the day. This indicates that the event had not yet occurred or gained significant attention. The tweets likely reflect routine discussions or unrelated topics.
+
+```{r}
+# 2022-10-29
 sentiment_day2_plot
+```
+  - The second graph indicates the absence of tweeter users during a 15-hour time frame, likely due to the insuing tragedy with a sharp increase in tweets starting from the afternoon (around 3 PM), with a peak between 6 PM and 7 PM. This trend likely corresponds to the timeline of the tragedy and its initial reports. The predominance of negative tweets aligns with the immediate aftermath, as information about the disaster began circulating widely. The spike in activity suggests widespread attention and concern as the event unfolded.
+
+```{r}
+# 2022-10-30
 sentiment_day3_plot
 ```
-### END OF SENTIMENT ANALYSIS ###
+  - The third graph shows a large volume of tweets throughout the day, peaking during the early morning hours (midnight to 3 AM) and gradually decreasing as the day progresses. Negative tweets dominate during the early hours, likely reflecting real-time reactions to the Itaewon tragedy, as people expressed shock, grief, or frustration. The steady decline in tweets as the day progresses suggests that the immediate emotional response subsided, giving way to more measured discussions or updates.
 
+### END OF SENTIMENT ANALYSIS ###
